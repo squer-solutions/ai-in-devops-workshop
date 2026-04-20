@@ -1,0 +1,14 @@
+{
+  "name": "ai-in-devops-workshop",
+  "private": true,
+  "workspaces": [
+    "app/shared",
+    "app/claims-api",
+    "app/claims-worker",
+    "slot2-scaffold"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  }
+}

@@ -1,1 +1,29 @@
-docs/superpowers/*
+# dependencies
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# build artifacts
+dist/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+
+# facilitator materials (not for public repo)
+/facilitator/
+
+# local design docs + plans
+docs/superpowers/
+
+# macOS
+.DS_Store
+
+# editor
+.vscode/
+.idea/
+
+# logs
+*.log
+overnight-log.md
