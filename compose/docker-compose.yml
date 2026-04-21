@@ -40,6 +40,7 @@ services:
       DATABASE_URL: postgres://workshop:workshop@postgres:5432/claims
       REDIS_URL: redis://redis:6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: claims-api
       PORT: "8080"
       LOG_FILE: /logs/claims-api.log
     depends_on:
@@ -60,6 +61,7 @@ services:
       DATABASE_URL: postgres://workshop:workshop@postgres:5432/claims
       REDIS_URL: redis://redis:6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: claims-worker
       PORT: "8081"
       LOG_FILE: /logs/claims-worker.log
     depends_on:

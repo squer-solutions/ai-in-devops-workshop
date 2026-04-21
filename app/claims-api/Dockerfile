@@ -17,4 +17,4 @@ COPY --from=build /app/app/shared/package.json ./app/shared/package.json
 COPY --from=build /app/app/claims-api/dist ./app/claims-api/dist
 COPY --from=build /app/app/claims-api/package.json ./app/claims-api/package.json
 EXPOSE 8080
-CMD ["node", "--enable-source-maps", "app/claims-api/dist/index.js"]
+CMD ["node", "--enable-source-maps", "--require", "/app/app/shared/dist/register.js", "app/claims-api/dist/index.js"]

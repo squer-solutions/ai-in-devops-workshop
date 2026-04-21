@@ -12,19 +12,13 @@
         "-e",
         "GRAFANA_URL=http://localhost:3000",
         "-e",
-        "GRAFANA_SERVICE_ACCOUNT_TOKEN",
+        "GRAFANA_USERNAME=admin",
+        "-e",
+        "GRAFANA_PASSWORD=workshop-grafana-admin",
         "docker.io/mcp/grafana:latest",
         "-t",
         "stdio"
       ],
-      "environment": {
-        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "{env:GRAFANA_SERVICE_ACCOUNT_TOKEN}"
-      },
-      "enabled": true
-    },
-    "docker": {
-      "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-docker"],
       "enabled": true
     }
   }

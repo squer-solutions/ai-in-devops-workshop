@@ -1,6 +1,8 @@
+// OTel SDK is preloaded via `node --require @workshop/shared/dist/register.js`.
+// See claims-api/src/index.ts for the explanation.
 import { Redis } from "ioredis";
 import type { ClaimJob } from "@workshop/shared";
-import { startOtel, createLogger } from "@workshop/shared";
+import { createLogger } from "@workshop/shared";
 import { processOne } from "./lib/processor.js";
 import Fastify from "fastify";
 import {
@@ -11,7 +13,6 @@ import {
   ChaosMode,
 } from "./lib/chaos-state.js";
 
-startOtel("claims-worker");
 const log = createLogger("claims-worker");
 
 const redis = new Redis(process.env.REDIS_URL ?? "redis://redis:6379");
