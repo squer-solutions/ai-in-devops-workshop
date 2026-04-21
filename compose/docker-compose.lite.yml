@@ -1,0 +1,13 @@
+# Lite override: drops Tempo and disables the hostmetrics receiver.
+#
+# Usage:
+#   podman-compose -f docker-compose.yml -f docker-compose.lite.yml up -d
+#
+# Use this on laptops with less memory or when Tempo is flaking.
+
+services:
+  tempo:
+    profiles: ["disabled"]
+  otel-collector:
+    volumes:
+      - ./otel/otel-collector-config.lite.yml:/etc/otel-collector-config.yml:ro
