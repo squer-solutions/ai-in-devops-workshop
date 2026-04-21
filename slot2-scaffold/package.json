@@ -1,0 +1,23 @@
+{
+  "name": "@workshop/slot2-scaffold",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node --enable-source-maps dist/src/index.js",
+    "dev": "tsx src/index.ts",
+    "lookup-ids": "tsx scripts/lookup-ids.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@octokit/rest": "^21.0.0",
+    "graphql-request": "^7.1.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}
