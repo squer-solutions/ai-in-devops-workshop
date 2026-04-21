@@ -59,3 +59,71 @@ describe('GET /users/:id', () => {
     }
   })
 })
+
+describe('PATCH /users/:id', () => {
+  it('returns 200 with the updated user', async () => {
+    const app = buildServer()
+    try {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/users/u4',
+        payload: { is_locked: false, privileges: ['claims:read'] },
+      })
+      expect(res.statusCode).toBe(200)
+      const user = res.json<Record<string, unknown>>()
+      expect(user.user_id).toBe('u4')
+      expect(user.is_locked).toBe(false)
+      expect(user.privileges).toEqual(['claims:read'])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('does not change unpatched fields', async () => {
+    const app = buildServer()
+    try {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/users/u4',
+        payload: { is_locked: false },
+      })
+      expect(res.statusCode).toBe(200)
+      const user = res.json<Record<string, unknown>>()
+      expect(user.firstname).toBe('Dave')
+      expect(user.lastname).toBe('Fischer')
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns 404 for unknown id', async () => {
+    const app = buildServer()
+    try {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/users/does-not-exist',
+        payload: { is_locked: false },
+      })
+      expect(res.statusCode).toBe(404)
+      expect(res.json()).toEqual({ error: 'not found' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('ignores user_id in payload', async () => {
+    const app = buildServer()
+    try {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/users/u4',
+        payload: { user_id: 'u999', is_locked: false },
+      })
+      expect(res.statusCode).toBe(200)
+      const user = res.json<Record<string, unknown>>()
+      expect(user.user_id).toBe('u4')
+    } finally {
+      await app.close()
+    }
+  })
+})

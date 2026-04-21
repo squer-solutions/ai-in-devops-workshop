@@ -36,6 +36,40 @@ paths:
                   is_locked: false
 
   /users/{id}:
+    patch:
+      operationId: updateUser
+      summary: Partially update a user
+      description: Updates one or more fields of an existing user. `user_id` cannot be changed.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The `user_id` of the user to update.
+          schema:
+            type: string
+          example: u4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPatch"
+            example:
+              is_locked: false
+              privileges: ["claims:read"]
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: No user with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
     get:
       operationId: getUserById
       summary: Get a user by id
@@ -105,3 +139,20 @@ components:
         error:
           type: string
           enum: [not found]
+
+    UserPatch:
+      type: object
+      description: Fields to update on a user. All fields are optional; `user_id` is immutable.
+      properties:
+        firstname:
+          type: string
+        lastname:
+          type: string
+        privileges:
+          type: array
+          items:
+            type: string
+        is_active:
+          type: boolean
+        is_locked:
+          type: boolean

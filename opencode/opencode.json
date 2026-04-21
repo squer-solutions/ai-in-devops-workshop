@@ -1,6 +1,14 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
+    "mock-user-svc": {
+      "type": "local",
+      "command": ["node", "--enable-source-maps", "../mcp-user-svc/dist/index.js"],
+      "enabled": true,
+      "environment": {
+        "USER_SVC_URL": "http://localhost:8082"
+      }
+    },
     "grafana": {
       "type": "local",
       "command": [

@@ -9,6 +9,8 @@ type User = {
   is_locked: boolean
 }
 
+type UserPatch = Partial<Omit<User, 'user_id'>>
+
 const users: User[] = [
   {
     user_id: 'u1',
@@ -61,6 +63,14 @@ export function buildServer() {
     const user = users.find((u) => u.user_id === req.params.id)
     if (!user) return reply.code(404).send({ error: 'not found' })
     return user
+  })
+
+  app.patch<{ Params: { id: string }; Body: UserPatch }>('/users/:id', async (req, reply) => {
+    const idx = users.findIndex((u) => u.user_id === req.params.id)
+    if (idx === -1) return reply.code(404).send({ error: 'not found' })
+    const { user_id: _ignored, ...patch } = req.body as UserPatch & { user_id?: unknown }
+    users[idx] = { ...users[idx], ...patch }
+    return users[idx]
   })
 
   return app
