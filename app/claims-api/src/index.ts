@@ -5,10 +5,10 @@ import { chaosRoutes } from "./routes/chaos.js";
 import { claimsRoutes } from "./routes/claims.js";
 import { startChaosEffects } from "./lib/chaos-effects.js";
 
-const log = createLogger("claims-api");
 startOtel("claims-api");
+const log = createLogger("claims-api");
 
-const app = Fastify({ logger: false });
+const app = Fastify({ loggerInstance: log });
 
 await app.register(healthRoutes);
 await app.register(chaosRoutes);

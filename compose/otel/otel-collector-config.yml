@@ -12,6 +12,21 @@ receivers:
       memory: {}
       load: {}
       network: {}
+  filelog:
+    include: ["/logs/*.log"]
+    include_file_name: false
+    include_file_path: false
+    operators:
+      - type: json_parser
+        timestamp:
+          parse_from: attributes.time
+          layout: "%Y-%m-%dT%H:%M:%S.%LZ"
+      - type: move
+        from: attributes.msg
+        to: body
+      - type: move
+        from: attributes.service
+        to: resource["service.name"]
 
 processors:
   batch: {}
@@ -21,14 +36,21 @@ processors:
 exporters:
   prometheus:
     endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true
   otlp/tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
+  debug:
+    verbosity: basic
 
 service:
+  telemetry:
+    logs:
+      level: info
   pipelines:
     traces:
       receivers: [otlp]
@@ -39,6 +61,6 @@ service:
       processors: [batch, resourcedetection]
       exporters: [prometheus]
     logs:
-      receivers: [otlp]
+      receivers: [filelog]
       processors: [batch, resourcedetection]
-      exporters: [loki]
+      exporters: [loki, debug]

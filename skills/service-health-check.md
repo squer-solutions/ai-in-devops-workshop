@@ -16,7 +16,7 @@ You are running a 60-second health scan on the workshop stack.
    - Throughput last 5 min: `sum(rate(http_server_duration_milliseconds_count{service_name="<svc>"}[5m]))`
 2. Redis queue depth (approximation via worker log lines):
    `{service="claims-worker"} |~ "processed"` — infer from rate.
-3. Container CPU+memory: `system_cpu_utilization`, `system_memory_usage`.
+3. Container CPU+memory: `rate(system_cpu_time_seconds_total[1m])` (cores), `system_memory_usage_bytes / 1024 / 1024` (MB).
 4. Recent ERROR-level logs: `{service=~"claims-api|claims-worker"} | json | level="error"` — count lines, show the top one.
 
 # Output format

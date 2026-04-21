@@ -7,31 +7,41 @@
   "panels": [
     {
       "id": 1,
-      "type": "stat",
-      "title": "CPU (% by container)",
-      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
+      "type": "timeseries",
+      "title": "CPU time rate (cores)",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "expr": "system_cpu_utilization", "refId": "A" }]
+      "targets": [
+        {
+          "expr": "sum(rate(system_cpu_time_seconds_total[1m])) by (service_name)",
+          "refId": "A",
+          "legendFormat": "{{service_name}}"
+        }
+      ]
     },
     {
       "id": 2,
-      "type": "stat",
-      "title": "Memory (MB)",
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+      "type": "timeseries",
+      "title": "Memory usage (MB)",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "expr": "system_memory_usage / 1024 / 1024", "refId": "A" }
+        {
+          "expr": "max(system_memory_usage_bytes) by (service_name, state) / 1024 / 1024",
+          "refId": "A",
+          "legendFormat": "{{service_name}} {{state}}"
+        }
       ]
     },
     {
       "id": 3,
-      "type": "stat",
-      "title": "Redis queue depth (claims:queue)",
-      "gridPos": { "x": 0, "y": 6, "w": 24, "h": 6 },
+      "type": "timeseries",
+      "title": "Worker processed rate (claims/min)",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
       "datasource": { "type": "loki", "uid": "loki" },
       "targets": [
         {
-          "expr": "count_over_time({service=\"claims-worker\"} |~ \"processed\" [1m])",
+          "expr": "sum(count_over_time({service=\"claims-worker\"} |~ \"processed\" [1m]))",
           "refId": "A"
         }
       ]

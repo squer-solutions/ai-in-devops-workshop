@@ -11,8 +11,8 @@ import {
   ChaosMode,
 } from "./lib/chaos-state.js";
 
-const log = createLogger("claims-worker");
 startOtel("claims-worker");
+const log = createLogger("claims-worker");
 
 const redis = new Redis(process.env.REDIS_URL ?? "redis://redis:6379");
 
@@ -30,7 +30,7 @@ async function loop() {
   }
 }
 
-const ctrl = Fastify({ logger: false });
+const ctrl = Fastify({ loggerInstance: log });
 
 ctrl.post<{ Body: { mode?: string } }>("/chaos", async (req, reply) => {
   const { mode } = req.body ?? {};
