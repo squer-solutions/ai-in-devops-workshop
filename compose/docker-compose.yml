@@ -127,6 +127,14 @@ services:
       - prometheus
       - loki
 
+  mock-user-svc:
+    build:
+      context: ../mock-user-svc
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+
 volumes:
   pgdata:
   app-logs:
