@@ -1,0 +1,107 @@
+openapi: 3.1.0
+info:
+  title: mock-user-svc
+  version: 1.0.0
+  description: |
+    Static, in-memory user directory used in the AI-in-DevOps workshop.
+    No authentication, no persistence, no write endpoints.
+
+servers:
+  - url: http://localhost:8082
+    description: Local (host port)
+  - url: http://mock-user-svc:8082
+    description: Inside the podman-compose network
+
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      summary: List all users
+      description: Returns the complete in-memory user collection.
+      responses:
+        "200":
+          description: Array of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+              example:
+                - user_id: u1
+                  firstname: Alice
+                  lastname: Müller
+                  privileges: [claims:read, claims:write, admin]
+                  is_active: true
+                  is_locked: false
+
+  /users/{id}:
+    get:
+      operationId: getUserById
+      summary: Get a user by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The `user_id` of the user to fetch.
+          schema:
+            type: string
+          example: u1
+      responses:
+        "200":
+          description: Matching user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: No user with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+              example:
+                error: not found
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - user_id
+        - firstname
+        - lastname
+        - privileges
+        - is_active
+        - is_locked
+      properties:
+        user_id:
+          type: string
+          description: Stable unique identifier.
+          example: u1
+        firstname:
+          type: string
+          example: Alice
+        lastname:
+          type: string
+          example: Müller
+        privileges:
+          type: array
+          description: Permission strings granted to the user.
+          items:
+            type: string
+          example: [claims:read, claims:write, admin]
+        is_active:
+          type: boolean
+          description: Whether the user account is currently enabled.
+        is_locked:
+          type: boolean
+          description: Whether the user account is administratively locked.
+
+    NotFoundError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum: [not found]
