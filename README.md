@@ -89,6 +89,100 @@ scenarios/          # chaos injector + scenario briefs
 slot2-scaffold/     # starter TypeScript MCP for Slot 2
 ```
 
+## How the apps work
+
+The sample domain is deliberately small so it's easy to hold in your head. Two TypeScript services, one Postgres DB, one Redis queue.
+
+### Data flow
+
+```
+ client ──POST /claims──▶ claims-api ──INSERT──▶ postgres (status=pending)
+                             │
+                             └──LPUSH──▶ redis (claims:queue)
+                                            │
+                                            └──BRPOP──▶ claims-worker ──UPDATE──▶ postgres (status=approved)
+```
+
+1. A client posts a claim to `claims-api` (`POST /claims`).
+2. `claims-api` inserts a row into Postgres with `status='pending'` and enqueues a job on the Redis list `claims:queue`.
+3. `claims-worker` blocks on `BRPOP claims:queue`, dequeues a job, and updates the DB row to `status='approved'`.
+4. A follow-up `GET /claims/:id` returns the final row.
+
+All three of: `claims-api`, `claims-worker`, Postgres query spans — are instrumented via the OpenTelemetry Node SDK, which auto-patches `http`, `pg`, and `ioredis`. Metrics and traces flow through the OTel collector to Prometheus/Tempo. Logs are JSON lines written to a shared volume; the collector's `filelog` receiver tails them and forwards to Loki.
+
+### `claims-api` — Fastify HTTP service (port 8080)
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | Liveness — returns `{status: "ok"}`. Used by dashboards and readiness checks. |
+| `POST /claims` | Body `{customerId, amountCents, description}`. Writes to Postgres, enqueues a Redis job, returns `{id, status: "pending"}`. |
+| `GET /claims/:id` | Fetches a claim row. |
+| `POST /chaos` | Facilitator-only. Body `{mode: "<chaos-mode>"}` turns a failure mode on; empty body clears it. The current mode lives in process memory. |
+
+Every request emits a pino log line with `reqId`, URL, status, and `responseTime` — you'll see these in Loki.
+
+### `claims-worker` — background processor (port 8081, control only)
+
+Runs a `BRPOP` loop on `claims:queue`. For each job, it simulates a "fraud check" (a short computation) and marks the claim `approved`. Emits `"processed"` log lines with the claim ID.
+
+Port 8081 exposes the same `POST /chaos` endpoint so the worker can be targeted independently (e.g. `queue-backup` mode only makes sense on the worker).
+
+### Chaos modes
+
+| Mode | What it does | What you see |
+|---|---|---|
+| `slow-db` | Adds 800 ms sleep to every request handler | p95 latency doubles; request logs show `responseTime ≈ 800` |
+| `error-spike` | ~30% of requests throw mid-handler | 5xx rate climbs; `chaos: random error-spike` lines appear in Loki |
+| `cpu-hog` | Burns CPU on every event-loop tick | Container CPU rises; p95 drifts up under load |
+| `memory-leak` | Allocates 10 MB/tick, never frees | Container memory climbs linearly; eventually OOMs |
+| `queue-backup` | Worker skips jobs on the floor (target `claims-worker`) | `claims:queue` depth grows; claims stay `pending` in the DB |
+| `db-conn-leak` | Leaks one pooled connection per request | Slow degradation → `too many connections` errors |
+
+Inject with:
+
+```bash
+./scenarios/inject.sh <claims-api|claims-worker> <mode>
+./scenarios/inject.sh claims-api               # empty mode = clear
+```
+
+### Observability stack
+
+| Service | Role | URL |
+|---|---|---|
+| `otel-collector` | Single pipeline for metrics, traces, logs | :4318 (OTLP/HTTP) |
+| `prometheus` | Scrapes collector's `:8889/metrics` endpoint | http://localhost:9090 |
+| `loki` | Log storage, queried via LogQL | http://localhost:3100 |
+| `tempo` | Trace storage | http://localhost:3200 |
+| `grafana` | Dashboards + unified query UI | http://localhost:3000 (admin / workshop-grafana-admin) |
+
+Dashboards are auto-provisioned under the "Workshop" folder: `App Overview` (HTTP signals + recent logs) and `Services Health` (CPU/memory + worker rate).
+
+### Generating traffic
+
+Dashboards are empty when no traffic is flowing. To see live numbers:
+
+```bash
+for i in $(seq 1 60); do
+  curl -s -X POST http://localhost:8080/claims \
+    -H "content-type: application/json" \
+    -d '{"customerId":"c1","amountCents":100,"description":"warmup"}' > /dev/null
+  sleep 0.5
+done
+```
+
+## Grafana MCP — how authentication works
+
+The `grafana` MCP in `opencode/opencode.json` runs the official `docker.io/mcp/grafana` image. It needs to call Grafana's HTTP API to execute PromQL/LogQL/TraceQL. For the workshop we use **HTTP basic auth** with the admin account configured in compose:
+
+```
+GRAFANA_USERNAME=admin
+GRAFANA_PASSWORD=workshop-grafana-admin
+```
+
+Both values are baked into `opencode/opencode.json` — there's nothing to export and no service-account token to generate. This is fine for a local workshop but **don't reuse these creds anywhere real**.
+
+> In production you would instead provision a [Grafana service account](https://grafana.com/docs/grafana/latest/administration/service-accounts/) and pass its token via `GRAFANA_SERVICE_ACCOUNT_TOKEN`. The MCP supports that out of the box; we just don't need it here.
+
 ## Help
 
 Ask your facilitator first. For common setup pain points, they have a troubleshooting cheat sheet.
